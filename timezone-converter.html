@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time Zone Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Noto+Sans+JP:wght@300;400;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#0b0f1a;
+  --surface:#131929;
+  --surface2:#1a2236;
+  --border:#243048;
+  --accent:#4f9eff;
+  --accent2:#ff6b6b;
+  --green:#43d9ad;
+  --yellow:#ffd166;
+  --purple:#b48eff;
+  --text:#e8eef8;
+  --muted:#5a6a8a;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Noto Sans JP',sans-serif;
+  --display:'Outfit',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh;
+  background-image:radial-gradient(ellipse at 20% 20%,rgba(79,158,255,.06) 0%,transparent 60%),
+                   radial-gradient(ellipse at 80% 80%,rgba(67,217,173,.04) 0%,transparent 60%);}
+
+/* HEADER */
+.header{padding:20px 24px 0;text-align:center;}
+.header-title{font-family:var(--display);font-size:22px;font-weight:800;color:#fff;letter-spacing:.02em;}
+.header-title span{color:var(--accent);}
+.header-sub{font-size:11px;color:var(--muted);font-family:var(--mono);letter-spacing:.12em;margin-top:4px;}
+.live-clock{font-family:var(--mono);font-size:11px;color:var(--green);margin-top:8px;letter-spacing:.1em;}
+
+/* MAIN */
+.main{max-width:860px;margin:0 auto;padding:20px;}
+
+/* INPUT CARD */
+.input-card{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:16px;}
+.input-row{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:end;margin-bottom:20px;}
+.arrow-wrap{display:flex;align-items:center;justify-content:center;padding-bottom:2px;}
+.arrow-icon{font-size:22px;color:var(--accent);animation:pulse 2s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.field{display:flex;flex-direction:column;gap:6px;}
+.field label{font-size:10px;color:var(--muted);font-family:var(--mono);letter-spacing:.15em;text-transform:uppercase;}
+.field select,.field input[type=time]{
+  background:var(--surface2);border:1px solid var(--border);border-radius:10px;
+  color:var(--text);padding:11px 14px;font-family:var(--mono);font-size:14px;
+  outline:none;transition:border-color .15s;cursor:pointer;width:100%;
+  appearance:none;-webkit-appearance:none;
+}
+.field select:focus,.field input[type=time]:focus{border-color:var(--accent);}
+.select-wrap{position:relative;}
+.select-wrap::after{content:'▾';position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:12px;}
+
+/* TIME INPUT ROW */
+.time-row{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:16px;}
+.time-chip{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:all .15s;}
+.time-chip:hover{border-color:var(--accent);background:rgba(79,158,255,.08);}
+.time-chip.active{border-color:var(--accent);background:rgba(79,158,255,.12);}
+.time-chip-val{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--accent);}
+.time-chip-lbl{font-size:10px;color:var(--muted);}
+
+/* ADD TIME BUTTON */
+.add-time-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.time-input-wrap{display:flex;align-items:center;gap:8px;}
+.time-input-wrap input[type=time]{width:140px;}
+.btn-add{background:var(--accent);color:#0b0f1a;border:none;border-radius:8px;padding:10px 18px;font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer;transition:opacity .15s;}
+.btn-add:hover{opacity:.85;}
+.btn-clear{background:transparent;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;}
+.btn-clear:hover{border-color:var(--accent2);color:var(--accent2);}
+.btn-now{background:rgba(67,217,173,.15);color:var(--green);border:1px solid rgba(67,217,173,.3);border-radius:8px;padding:10px 14px;font-family:var(--mono);font-size:11px;cursor:pointer;transition:all .15s;}
+.btn-now:hover{background:rgba(67,217,173,.25);}
+
+/* DIVIDER */
+.divider{height:1px;background:var(--border);margin:20px 0;}
+
+/* RESULTS */
+.results-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+.results-title{font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.2em;text-transform:uppercase;}
+.results-count{font-family:var(--mono);font-size:10px;color:var(--muted);}
+
+.results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;}
+
+.result-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;transition:all .2s;position:relative;overflow:hidden;}
+.result-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0;transition:opacity .2s;}
+.result-card:hover{border-color:rgba(79,158,255,.4);transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.3);}
+.result-card:hover::before{opacity:1;}
+.result-card.source-card{border-color:rgba(67,217,173,.4);background:rgba(67,217,173,.06);}
+.result-card.source-card::before{opacity:1;background:linear-gradient(90deg,transparent,var(--green),transparent);}
+
+.rc-flag{font-size:20px;margin-bottom:6px;}
+.rc-country{font-size:11px;color:var(--muted);font-family:var(--mono);margin-bottom:2px;letter-spacing:.05em;}
+.rc-city{font-size:10px;color:var(--muted);margin-bottom:10px;}
+
+.rc-times{display:flex;flex-direction:column;gap:6px;}
+.rc-time-row{display:flex;justify-content:space-between;align-items:baseline;}
+.rc-input-lbl{font-size:10px;color:var(--muted);font-family:var(--mono);}
+.rc-time-val{font-family:var(--display);font-size:18px;font-weight:700;color:var(--text);}
+.rc-time-val.next-day{color:var(--yellow);}
+.rc-time-val.prev-day{color:var(--purple);}
+.rc-day-badge{font-size:9px;font-family:var(--mono);padding:1px 5px;border-radius:3px;margin-left:4px;}
+.badge-next{background:rgba(255,209,102,.15);color:var(--yellow);}
+.badge-prev{background:rgba(180,142,255,.15);color:var(--purple);}
+.badge-same{background:rgba(67,217,173,.1);color:var(--green);}
+
+.rc-offset{font-size:10px;font-family:var(--mono);color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px solid var(--border);}
+.rc-source-badge{font-size:9px;font-family:var(--mono);color:var(--green);font-weight:700;letter-spacing:.1em;}
+
+/* TIME TABLE */
+.table-wrap{margin-top:16px;overflow-x:auto;}
+.time-table{width:100%;border-collapse:collapse;font-size:12px;}
+.time-table th{background:var(--surface);padding:10px 12px;text-align:left;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:.1em;border:1px solid var(--border);white-space:nowrap;}
+.time-table td{padding:10px 12px;border:1px solid var(--border);font-family:var(--mono);white-space:nowrap;}
+.time-table tr:hover td{background:rgba(79,158,255,.04);}
+.time-table .source-row td{background:rgba(67,217,173,.05);}
+.td-flag{font-size:14px;}
+.td-country{font-size:12px;color:var(--text);}
+.td-offset{font-size:11px;color:var(--muted);}
+.td-time{font-size:13px;font-weight:700;}
+.td-next{color:var(--yellow);}
+.td-prev{color:var(--purple);}
+.td-same{color:var(--text);}
+
+/* TABS */
+.view-tabs{display:flex;gap:8px;margin-bottom:16px;}
+.view-tab{padding:7px 16px;font-size:11px;font-family:var(--mono);border-radius:8px;border:1px solid var(--border);color:var(--muted);cursor:pointer;transition:all .15s;}
+.view-tab.active{background:var(--accent);color:#0b0f1a;border-color:var(--accent);font-weight:700;}
+
+/* EMPTY */
+.empty{text-align:center;padding:40px;color:var(--muted);font-family:var(--mono);font-size:12px;}
+
+@media(max-width:600px){
+  .input-row{grid-template-columns:1fr;gap:10px;}
+  .arrow-wrap{transform:rotate(90deg);}
+  .results-grid{grid-template-columns:1fr 1fr;}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">🌏 TIME ZONE <span>CONVERTER</span></div>
+  <div class="header-sub">JAPAN · ASEAN · USA · WORLD</div>
+  <div class="live-clock" id="live-clock">● LIVE: --:--:--</div>
+</div>
+
+<div class="main">
+
+  <!-- INPUT CARD -->
+  <div class="input-card">
+
+    <!-- 基準国 / 対象国 -->
+    <div class="input-row">
+      <div class="field">
+        <label>基準国（現在地）</label>
+        <div class="select-wrap">
+          <select id="source-country" onchange="convert()"></select>
+        </div>
+      </div>
+      <div class="arrow-wrap">→</div>
+      <div class="field">
+        <label>対象国（複数選択可）</label>
+        <div class="select-wrap">
+          <select id="target-group" onchange="applyGroup()">
+            <option value="asean_jp">ASEAN + 日本</option>
+            <option value="asean_jp_us">ASEAN + 日本 + アメリカ</option>
+            <option value="all">すべて</option>
+            <option value="custom">カスタム</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- 時間入力 -->
+    <div class="field" style="margin-bottom:14px">
+      <label>時間を追加</label>
+      <div class="add-time-row">
+        <div class="time-input-wrap">
+          <input type="time" id="time-input" value="12:00">
+        </div>
+        <button class="btn-add" onclick="addTime()">＋ 追加</button>
+        <button class="btn-now" onclick="addNow()">⏱ 現在時刻</button>
+        <button class="btn-clear" onclick="clearTimes()">✕ クリア</button>
+      </div>
+    </div>
+
+    <!-- 時間チップ -->
+    <div class="time-row" id="time-chips"></div>
+
+  </div>
+
+  <!-- RESULTS -->
+  <div class="input-card" id="result-section" style="display:none">
+    <div class="results-header">
+      <span class="results-title">変換結果</span>
+      <span class="results-count" id="result-count"></span>
+    </div>
+
+    <div class="view-tabs">
+      <div class="view-tab active" onclick="setView('cards',this)">🗂 カード</div>
+      <div class="view-tab" onclick="setView('table',this)">📊 テーブル</div>
+    </div>
+
+    <div id="view-cards">
+      <div class="results-grid" id="results-grid"></div>
+    </div>
+    <div id="view-table" style="display:none">
+      <div class="table-wrap">
+        <table class="time-table" id="results-table"></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="empty" id="empty-state">
+    ⬆ 時間を追加して変換ボタンを押してください
+  </div>
+
+</div>
+
+<script>
+// ===================== ZONES =====================
+const ZONES = [
+  // ASEAN
+  {id:'th',  flag:'🇹🇭', country:'タイ',         city:'バンコク',    offset:7,  group:['asean_jp','asean_jp_us','all']},
+  {id:'jp',  flag:'🇯🇵', country:'日本',         city:'東京',        offset:9,  group:['asean_jp','asean_jp_us','all']},
+  {id:'vn',  flag:'🇻🇳', country:'ベトナム',     city:'ホーチミン',  offset:7,  group:['asean_jp','asean_jp_us','all']},
+  {id:'ph',  flag:'🇵🇭', country:'フィリピン',   city:'マニラ',      offset:8,  group:['asean_jp','asean_jp_us','all']},
+  {id:'id',  flag:'🇮🇩', country:'インドネシア', city:'ジャカルタ',  offset:7,  group:['asean_jp','asean_jp_us','all']},
+  {id:'my',  flag:'🇲🇾', country:'マレーシア',   city:'クアラルンプール', offset:8, group:['asean_jp','asean_jp_us','all']},
+  {id:'sg',  flag:'🇸🇬', country:'シンガポール', city:'シンガポール',offset:8,  group:['asean_jp','asean_jp_us','all']},
+  {id:'mm',  flag:'🇲🇲', country:'ミャンマー',   city:'ヤンゴン',    offset:6.5,group:['asean_jp','asean_jp_us','all']},
+  {id:'kh',  flag:'🇰🇭', country:'カンボジア',   city:'プノンペン',  offset:7,  group:['asean_jp','asean_jp_us','all']},
+  {id:'la',  flag:'🇱🇦', country:'ラオス',       city:'ビエンチャン',offset:7,  group:['asean_jp','asean_jp_us','all']},
+  {id:'bn',  flag:'🇧🇳', country:'ブルネイ',     city:'バンダルスリブガワン',offset:8,group:['all']},
+  // アメリカ
+  {id:'us_la',flag:'🇺🇸',country:'アメリカ(LA)', city:'ロサンゼルス',offset:-7, group:['asean_jp_us','all']},
+  {id:'us_ny',flag:'🇺🇸',country:'アメリカ(NY)', city:'ニューヨーク',offset:-4, group:['asean_jp_us','all']},
+  {id:'us_ch',flag:'🇺🇸',country:'アメリカ(シカゴ)',city:'シカゴ',   offset:-5, group:['asean_jp_us','all']},
+  // その他
+  {id:'cn',  flag:'🇨🇳', country:'中国',         city:'上海',        offset:8,  group:['all']},
+  {id:'kr',  flag:'🇰🇷', country:'韓国',         city:'ソウル',      offset:9,  group:['all']},
+  {id:'hk',  flag:'🇭🇰', country:'香港',         city:'香港',        offset:8,  group:['all']},
+  {id:'in',  flag:'🇮🇳', country:'インド',       city:'ムンバイ',    offset:5.5,group:['all']},
+  {id:'au',  flag:'🇦🇺', country:'オーストラリア',city:'シドニー',   offset:10, group:['all']},
+  {id:'gb',  flag:'🇬🇧', country:'イギリス',     city:'ロンドン',    offset:1,  group:['all']},
+  {id:'de',  flag:'🇩🇪', country:'ドイツ',       city:'フランクフルト',offset:2,group:['all']},
+  {id:'fr',  flag:'🇫🇷', country:'フランス',     city:'パリ',        offset:2,  group:['all']},
+  {id:'ae',  flag:'🇦🇪', country:'UAE',          city:'ドバイ',      offset:4,  group:['all']},
+];
+
+let selectedTimes = [];
+let currentView = 'cards';
+
+// ===================== INIT =====================
+function init() {
+  buildSourceSelect();
+  convert();
+  updateLiveClock();
+  setInterval(updateLiveClock, 1000);
+}
+
+function buildSourceSelect() {
+  const sel = document.getElementById('source-country');
+  sel.innerHTML = '';
+  ZONES.forEach(z => {
+    const opt = document.createElement('option');
+    opt.value = z.id;
+    opt.textContent = z.flag + ' ' + z.country + ' (' + z.city + ')';
+    if (z.id === 'th') opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function updateLiveClock() {
+  const now = new Date();
+  const h = String(now.getHours()).padStart(2,'0');
+  const m = String(now.getMinutes()).padStart(2,'0');
+  const s = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('live-clock').textContent = '● LIVE: ' + h + ':' + m + ':' + s;
+}
+
+// ===================== TIME MANAGEMENT =====================
+function addTime() {
+  const val = document.getElementById('time-input').value;
+  if (!val) return;
+  if (!selectedTimes.includes(val)) {
+    selectedTimes.push(val);
+    renderChips();
+    convert();
+  }
+}
+
+function addNow() {
+  const now = new Date();
+  const sourceId = document.getElementById('source-country').value;
+  const sourceZone = ZONES.find(z => z.id === sourceId);
+  // Get current time in source timezone
+  const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+  const sourceMs = utcMs + sourceZone.offset * 3600000;
+  const sourceDate = new Date(sourceMs);
+  const h = String(sourceDate.getHours()).padStart(2,'0');
+  const m = String(sourceDate.getMinutes()).padStart(2,'0');
+  const val = h + ':' + m;
+  if (!selectedTimes.includes(val)) {
+    selectedTimes.push(val);
+    renderChips();
+    convert();
+  }
+}
+
+function removeTime(t) {
+  selectedTimes = selectedTimes.filter(x => x !== t);
+  renderChips();
+  convert();
+}
+
+function clearTimes() {
+  selectedTimes = [];
+  renderChips();
+  convert();
+}
+
+function renderChips() {
+  const wrap = document.getElementById('time-chips');
+  wrap.innerHTML = '';
+  selectedTimes.forEach(t => {
+    const div = document.createElement('div');
+    div.className = 'time-chip active';
+    div.innerHTML = `<span class="time-chip-val">${t}</span><span class="time-chip-lbl" onclick="removeTime('${t}')" style="cursor:pointer;color:var(--accent2)" title="削除">✕</span>`;
+    wrap.appendChild(div);
+  });
+}
+
+function applyGroup() {
+  convert();
+}
+
+// ===================== CONVERT =====================
+function getTargetZones() {
+  const group = document.getElementById('target-group').value;
+  return ZONES.filter(z => z.group.includes(group));
+}
+
+function convertTime(timeStr, fromOffset, toOffset) {
+  const [h, m] = timeStr.split(':').map(Number);
+  const totalFromMin = h * 60 + m;
+  const diffMin = (toOffset - fromOffset) * 60;
+  let totalToMin = totalFromMin + diffMin;
+  let dayDiff = 0;
+  if (totalToMin >= 24 * 60) { dayDiff = 1; totalToMin -= 24 * 60; }
+  else if (totalToMin < 0) { dayDiff = -1; totalToMin += 24 * 60; }
+  const th = String(Math.floor(totalToMin / 60)).padStart(2,'0');
+  const tm = String(totalToMin % 60).padStart(2,'0');
+  return { time: th + ':' + tm, dayDiff };
+}
+
+function convert() {
+  const sourceId = document.getElementById('source-country').value;
+  const sourceZone = ZONES.find(z => z.id === sourceId);
+  const targets = getTargetZones();
+  const times = selectedTimes;
+
+  const section = document.getElementById('result-section');
+  const empty = document.getElementById('empty-state');
+
+  if (times.length === 0) {
+    section.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+
+  section.style.display = 'block';
+  empty.style.display = 'none';
+  document.getElementById('result-count').textContent = targets.length + 'カ国 / ' + times.length + '時間';
+
+  renderCards(sourceZone, targets, times);
+  renderTable(sourceZone, targets, times);
+}
+
+function dayBadge(diff) {
+  if (diff === 1) return '<span class="rc-day-badge badge-next">翌日</span>';
+  if (diff === -1) return '<span class="rc-day-badge badge-prev">前日</span>';
+  return '<span class="rc-day-badge badge-same">当日</span>';
+}
+
+function timeClass(diff) {
+  if (diff === 1) return 'rc-time-val next-day';
+  if (diff === -1) return 'rc-time-val prev-day';
+  return 'rc-time-val';
+}
+
+function renderCards(source, targets, times) {
+  const grid = document.getElementById('results-grid');
+  grid.innerHTML = '';
+
+  // All unique zones (source + targets, deduplicated)
+  const allZones = [source, ...targets.filter(z => z.id !== source.id)];
+
+  allZones.forEach(zone => {
+    const isSource = zone.id === source.id;
+    const div = document.createElement('div');
+    div.className = 'result-card' + (isSource ? ' source-card' : '');
+
+    const timesHTML = times.map(t => {
+      const { time, dayDiff } = isSource
+        ? { time: t, dayDiff: 0 }
+        : convertTime(t, source.offset, zone.offset);
+      return `<div class="rc-time-row">
+        <span class="rc-input-lbl">${t} →</span>
+        <span class="${timeClass(dayDiff)}">${time}${dayBadge(dayDiff)}</span>
+      </div>`;
+    }).join('');
+
+    const offsetSign = zone.offset >= 0 ? '+' : '';
+    div.innerHTML = `
+      <div class="rc-flag">${zone.flag}</div>
+      <div class="rc-country">${zone.country}</div>
+      <div class="rc-city">${zone.city}</div>
+      <div class="rc-times">${timesHTML}</div>
+      <div class="rc-offset">UTC ${offsetSign}${zone.offset}${isSource ? ' <span class="rc-source-badge">● 基準</span>' : ''}</div>
+    `;
+    grid.appendChild(div);
+  });
+}
+
+function renderTable(source, targets, times) {
+  const table = document.getElementById('results-table');
+  const allZones = [source, ...targets.filter(z => z.id !== source.id)];
+
+  let html = '<thead><tr>';
+  html += '<th>国</th><th>都市</th><th>UTC</th>';
+  times.forEach(t => {
+    html += `<th>${t}（基準）</th>`;
+  });
+  html += '</tr></thead><tbody>';
+
+  allZones.forEach(zone => {
+    const isSource = zone.id === source.id;
+    html += `<tr class="${isSource ? 'source-row' : ''}">`;
+    html += `<td><span class="td-flag">${zone.flag}</span> <span class="td-country">${zone.country}</span></td>`;
+    html += `<td style="color:var(--muted);font-size:11px">${zone.city}</td>`;
+    const sign = zone.offset >= 0 ? '+' : '';
+    html += `<td class="td-offset">UTC${sign}${zone.offset}</td>`;
+    times.forEach(t => {
+      if (isSource) {
+        html += `<td class="td-time td-same">${t}</td>`;
+      } else {
+        const { time, dayDiff } = convertTime(t, source.offset, zone.offset);
+        const cls = dayDiff === 1 ? 'td-next' : dayDiff === -1 ? 'td-prev' : 'td-same';
+        const badge = dayDiff === 1 ? '↑翌' : dayDiff === -1 ? '↓前' : '';
+        html += `<td class="td-time ${cls}">${time} <span style="font-size:9px">${badge}</span></td>`;
+      }
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+function setView(view, btn) {
+  currentView = view;
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('view-cards').style.display = view === 'cards' ? 'block' : 'none';
+  document.getElementById('view-table').style.display = view === 'table' ? 'block' : 'none';
+}
+
+// ===================== QUICK PRESETS =====================
+// Add default times on load
+selectedTimes = ['09:00', '12:00', '15:00', '18:00'];
+
+window.addEventListener('load', () => {
+  init();
+  renderChips();
+  convert();
+});
+</script>
+</body>
+</html>
